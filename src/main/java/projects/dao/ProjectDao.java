@@ -197,4 +197,58 @@ public class ProjectDao extends DaoBase
 			}
 		}
 	}
+
+	public boolean modifyProjectDetails(Project project) {
+	    String sql = """
+	        UPDATE %s
+	        SET project_name = ?, estimated_hours = ?, actual_hours = ?, difficulty = ?, notes = ?
+	        WHERE project_id = ?""".formatted(PROJECT_TABLE);
+
+	    try (Connection conn = DbConnection.getConnection()) {  // conn is declared outside
+	        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+	            startTransaction(conn);
+
+	            stmt.setString(1, project.getProjectName());
+	            stmt.setBigDecimal(2, project.getEstimatedHours());
+	            stmt.setBigDecimal(3, project.getActualHours());
+	            stmt.setInt(4, project.getDifficulty());
+	            stmt.setString(5, project.getNotes());
+	            stmt.setInt(6, project.getProjectId());
+
+	            int rowsAffected = stmt.executeUpdate();
+	            commitTransaction(conn);
+	            return rowsAffected == 1;
+
+	        } catch (SQLException e) {
+	            rollbackTransaction(conn);  // Now conn is accessible
+	            throw new DbException(e); 
+	        } 
+	    } catch (SQLException e) {  // Additional catch for conn
+	        throw new DbException(e);
+	    }
+	}
+
+	public boolean deleteProject(Integer projectId) 
+	{
+		String sql = """
+		        DELETE FROM project WHERE project_id=?""".formatted(PROJECT_TABLE);
+
+	    try (Connection conn = DbConnection.getConnection()) {  // conn is declared outside
+	        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+	            startTransaction(conn);
+
+	            stmt.setInt(1, projectId);
+
+	            int rowsAffected = stmt.executeUpdate();
+	            commitTransaction(conn);
+	            return rowsAffected == 1;
+
+	        } catch (SQLException e) {
+	            rollbackTransaction(conn);  // Now conn is accessible
+	            throw new DbException(e); 
+	        } 
+	    } catch (SQLException e) {  // Additional catch for conn
+	        throw new DbException(e);
+	    }
+	}
 }
